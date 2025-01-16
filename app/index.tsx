@@ -28,7 +28,11 @@ export default function Index() {
 			const data = await response.json();
 
 			if (data.status === "ok") {
-				setArticles(data.articles); // Store articles in state
+				// Filter articles where source.id is not null
+				const filteredArticles = data.articles.filter(
+					(article) => article.source.id !== null
+				);
+				setArticles(filteredArticles); // Store articles in state
 			} else {
 				console.error("Failed to fetch news:", data);
 			}
