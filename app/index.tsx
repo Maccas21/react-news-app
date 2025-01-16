@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import {
-	TextInput,
 	View,
-	StyleSheet,
-	ActivityIndicator,
+	TextInput,
 	FlatList,
 	Text,
+	StyleSheet,
+	ActivityIndicator,
+	Image,
+	TouchableOpacity,
+	Linking,
 } from "react-native";
 
 export default function Index() {
@@ -13,12 +16,12 @@ export default function Index() {
 	const [articles, setArticles] = useState([]);
 	const [loading, setLoading] = useState(false);
 
-	const apiKey = "e73af2c3739d4ebf86bc46a6fe7c4363";
+	const apiKey = "e73af2c3739d4ebf86bc46a6fe7c4363"; // Replace with your actual API key
 
+	// Fetch data from NewsAPI
 	const fetchNews = async (query) => {
-		if (!query) return;
-		setLoading(true);
-
+		if (!query) return; // Prevent fetching for an empty query
+		setLoading(true); // Show loading indicator
 		try {
 			const response = await fetch(
 				`https://newsapi.org/v2/everything?q=${encodeURIComponent(
@@ -32,7 +35,7 @@ export default function Index() {
 				const filteredArticles = data.articles.filter(
 					(article) => article.source.id !== null
 				);
-				setArticles(filteredArticles); // Store articles in state
+				setArticles(filteredArticles);
 			} else {
 				console.error("Failed to fetch news:", data);
 			}
@@ -43,6 +46,11 @@ export default function Index() {
 		}
 	};
 
+	const handlePress = (url) => {
+		// Opens the article URL in the default browser
+		Linking.openURL(url);
+	};
+
 	return (
 		<View style={styles.container}>
 			{/* Search Bar */}
@@ -51,7 +59,10 @@ export default function Index() {
 				placeholder="Search for news..."
 				value={searchQuery}
 				onChangeText={(text) => setSearchQuery(text)}
-				onSubmitEditing={() => fetchNews(searchQuery)} // Fetch news when search is submitted
+				onSubmitEditing={() => {
+					setArticles([]); // Clear previous results before new search
+					fetchNews(searchQuery); // Fetch first batch of results
+				}}
 			/>
 
 			{/* Loading Indicator */}
@@ -62,10 +73,24 @@ export default function Index() {
 				data={articles}
 				keyExtractor={(item, index) => index.toString()} // Unique key for each article
 				renderItem={({ item }) => (
-					<View style={styles.article}>
-						<Text style={styles.title}>{item.title}</Text>
-						<Text style={styles.description}>{item.description}</Text>
-					</View>
+					<TouchableOpacity
+						style={styles.article}
+						onPress={() => handlePress(item.url)} // Open the article URL on press
+					>
+						<View style={styles.articleContent}>
+							{/* Image */}
+							<Image
+								source={{ uri: item.urlToImage }}
+								style={styles.image}
+								resizeMode="cover"
+							/>
+							{/* Text */}
+							<View style={styles.textContent}>
+								<Text style={styles.title}>{item.title}</Text>
+								<Text style={styles.description}>{item.description}</Text>
+							</View>
+						</View>
+					</TouchableOpacity>
 				)}
 			/>
 		</View>
@@ -88,22 +113,35 @@ const styles = StyleSheet.create({
 		backgroundColor: "#fff",
 	},
 	article: {
-		padding: 10,
-		marginBottom: 10,
-		borderRadius: 8,
+		marginBottom: 20,
 		backgroundColor: "#fff",
+		borderRadius: 8,
 		shadowColor: "#000",
 		shadowOffset: { width: 0, height: 1 },
 		shadowOpacity: 0.1,
 		shadowRadius: 5,
+		elevation: 3,
+	},
+	articleContent: {
+		flexDirection: "row", // Align image and text side by side
+		padding: 10,
+	},
+	image: {
+		width: 60, // Small square image
+		height: 60,
+		borderRadius: 8,
+		marginRight: 10, // Space between image and text
+	},
+	textContent: {
+		flex: 1, // Take remaining space next to image
 	},
 	title: {
 		fontSize: 16,
 		fontWeight: "bold",
+		marginBottom: 5,
 	},
 	description: {
 		fontSize: 14,
-		marginTop: 5,
 		color: "#555",
 	},
 });
